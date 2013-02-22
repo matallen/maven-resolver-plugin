@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 //import org.apache.maven.execution.MavenSession;
@@ -76,7 +77,7 @@ public abstract class ResolverMojo extends AbstractMojo {
   /**
    * Regular expression matching a derived module version from the
    * &lt;rootDir&gt; path. All parenthesized subexpressions are concatenated to
-   * form the version. If this results in an emtpy string the version will the
+   * form the version. If this results in an empty string the version will the
    * &lt;versionRegExp&gt; is used verbatim. The ultimate version string must
    * match ResolverMojo.REGEXP_VALID_VERSION, else a build time error will
    * occur. See http://jakarta.apache.org/regexp/apidocs/ for regular expression
@@ -354,6 +355,8 @@ public abstract class ResolverMojo extends AbstractMojo {
     private String srcAbsPath;
     private String modRelPath;
 
+    /** for testing purposes only */
+    public ModuleReference(){}
     /**
      * 
      * @param src
@@ -564,13 +567,20 @@ public abstract class ResolverMojo extends AbstractMojo {
      * @param src
      * @return
      */
-    private String getArtifactIdPath(String src, boolean stripClean) throws ModuleReferenceExcluded {
+    protected String getArtifactIdPath(String src, boolean stripClean) throws ModuleReferenceExcluded {
 
       // subtract groupId
-      String artifactId = src == null ? "" : src.substring(src.lastIndexOf(File.separatorChar) + 1, src.length());
-
+      String artifactId=new File(src).getName();
+      
       // move up a level if no natural artifactId
-      artifactId = artifactId.equals("") ? getArtifactIdPath(getGroupIdPath(src), stripClean) : artifactId;
+//      artifactId = artifactId.equals("") ? getArtifactIdPath(getGroupIdPath(src), stripClean) : artifactId;
+      if ("".equals(artifactId)){
+        artifactId=getArtifactIdPath(getGroupIdPath(src), stripClean);
+      }else{
+        artifactId=artifactId.replaceAll("(-\\d+(\\.\\d+)*)*", "");
+        artifactId=artifactId.replaceAll("\\.(e|w|j)ar$", "");
+      }
+      
       
       //mallen - remove the _jar bit from the end
 //      if (stripClean)
