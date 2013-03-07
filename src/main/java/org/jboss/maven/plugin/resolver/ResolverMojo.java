@@ -54,6 +54,8 @@ public abstract class ResolverMojo extends AbstractMojo {
    * @parameter expression="${maven.resolver.includedRegExp}"
    */
   private String includedRegExp=".+.(j|e|w)ar$";
+  /** @parameter expression="${maven.resolver.validTypes}" */
+  private String validTypes="^[j|e|w]ar$";
   
   /**
    * Prefix to apply to resolved module groupIds
@@ -169,9 +171,9 @@ public abstract class ResolverMojo extends AbstractMojo {
       dummyJar = new File(DummyClass.class.getProtectionDomain().getCodeSource().getLocation().getFile());
 
       // initialise the groupPrefix
-      System.out.println("BEFORE = "+ groupPrefix);
+//      System.out.println("BEFORE = "+ groupPrefix);
       groupPrefix = model2Path(groupPrefix);
-      System.out.println("AFTER = "+ groupPrefix);
+//      System.out.println("AFTER = "+ groupPrefix);
 
       // compile regular expressions
       boolean isWindows=System.getProperty("os.name").toLowerCase().startsWith("windows");
@@ -208,15 +210,9 @@ public abstract class ResolverMojo extends AbstractMojo {
       }
     } else {
       
-      Pattern p=Pattern.compile(includedRegExp);
-      
 //      for (POM_TYPES suffix : POM_TYPES.values())
-      if (root.getName().matches(includedRegExp)){
-//        if (root.getName().endsWith(POM_SEP + suffix.toString())) {
-//        String suffix=FileUtils.getExtension(root.getName());
-
+      if (root.getPath().matches(includedRegExp)){
           try {
-//            File x=new File(root.getAbsolutePath().replaceAll(POM_SEP+suffix.name(), ""));
             ModuleReference moduleReference = new ModuleReference(root);
             modules.put(moduleReference.getId(), moduleReference);
             if (getLog().isInfoEnabled())
@@ -506,7 +502,6 @@ public abstract class ResolverMojo extends AbstractMojo {
      * @throws ModuleReferenceExcluded
      */
     private String getType(String src) throws ModuleReferenceExcluded {
-
       // protect against nulls
       String type = src == null ? "" : src;
 
@@ -517,12 +512,11 @@ public abstract class ResolverMojo extends AbstractMojo {
 
       // check that the type is supported
       try {
-        if (!("filename"+File.separator+type).matches(includedRegExp))
-//        if (POM_TYPES.valueOf(type) == null)
+        if (!type.matches(validTypes))
           throw new IllegalArgumentException();
       } catch (IllegalArgumentException e) {
 //        throw new ModuleReferenceExcluded("resolved module type value [" + type + "] is not in the supported list " + Arrays.asList(POM_TYPES.values()));
-        throw new ModuleReferenceExcluded("resolved module type value [" + type + "] does not match the supported list " + includedRegExp +" (as set by 'includedRegExp' parameter)");
+        throw new ModuleReferenceExcluded("resolved module type value [" + type + "] does not match the supported values '" + validTypes +"' (as set by 'includedRegExp' parameter)");
       }
 
       return type;
@@ -580,11 +574,6 @@ public abstract class ResolverMojo extends AbstractMojo {
         artifactId=artifactId.replaceAll("(-\\d+(\\.\\d+)*)*", "");
         artifactId=artifactId.replaceAll("\\.(e|w|j)ar$", "");
       }
-      
-      
-      //mallen - remove the _jar bit from the end
-//      if (stripClean)
-//        artifactId = artifactId.substring(0, artifactId.lastIndexOf("."));
       
       return artifactId;
     }
